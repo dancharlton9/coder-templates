@@ -63,17 +63,23 @@ resource "coder_agent" "main" {
     GIT_AUTHOR_EMAIL    = data.coder_workspace_owner.me.email
     GIT_COMMITTER_NAME  = data.coder_workspace_owner.me.full_name
     GIT_COMMITTER_EMAIL = data.coder_workspace_owner.me.email
+    PATH                = "/home/coder/.npm-global/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
   }
 
   startup_script = <<-EOF
     set -e
+
+    # Configure npm to use a user-writable global directory
+    mkdir -p ~/.npm-global
+    npm config set prefix '~/.npm-global'
+    export PATH=~/.npm-global/bin:$PATH
 
     # Install Claude Code if not already present
     if ! command -v claude &> /dev/null; then
       npm install -g @anthropic-ai/claude-code
     fi
 
-    # Clone repo if not already present (persists across restarts via volume)
+    # Clone repo if not already present
     REPO_DIR=~/project
     if [ ! -d "$REPO_DIR/.git" ]; then
       git clone ${data.coder_parameter.repo.value} "$REPO_DIR"
