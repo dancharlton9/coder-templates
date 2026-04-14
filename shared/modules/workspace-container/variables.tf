@@ -48,9 +48,9 @@ variable "extra_env" {
   default     = {}
 }
 
-variable "docker_socket" {
+variable "docker_in_docker" {
   type        = bool
-  description = "Whether to mount the Docker socket into the workspace"
+  description = "Run a full Docker daemon inside the workspace (DinD). Requires privileged mode."
   default     = true
 }
 

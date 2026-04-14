@@ -72,12 +72,19 @@ module "workspace" {
   owner_email           = data.coder_workspace_owner.me.email
   arch                  = data.coder_provisioner.me.arch
   image_context         = path.module
-  docker_socket         = true
+  docker_in_docker      = true
   build_args            = {
     DOTNET_SDK_VERSION = data.coder_parameter.dotnet_sdk.value
   }
 
   startup_script = <<-EOF
+    # Start Docker daemon (DinD)
+    sudo dockerd &>/tmp/dockerd.log &
+    for i in $(seq 1 30); do
+      docker info &>/dev/null && break
+      sleep 1
+    done
+
     # Shared bootstrap (SSH, PATH, Claude Code)
     . /opt/coder/scripts/bootstrap.sh
 

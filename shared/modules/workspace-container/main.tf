@@ -16,6 +16,14 @@ resource "docker_volume" "home_volume" {
   }
 }
 
+resource "docker_volume" "docker_volume" {
+  count = var.docker_in_docker ? 1 : 0
+  name  = "coder-${var.workspace_id}-docker"
+  lifecycle {
+    ignore_changes = all
+  }
+}
+
 resource "coder_agent" "main" {
   os   = "linux"
   arch = var.arch
@@ -67,13 +75,15 @@ resource "docker_container" "workspace" {
   }
 
   dynamic "volumes" {
-    for_each = var.docker_socket ? [1] : []
+    for_each = var.docker_in_docker ? [1] : []
     content {
-      host_path      = "/var/run/docker.sock"
-      container_path = "/var/run/docker.sock"
+      volume_name    = docker_volume.docker_volume[0].name
+      container_path = "/var/lib/docker"
       read_only      = false
     }
   }
+
+  privileged = var.docker_in_docker
 
   capabilities {
     add = ["SYS_PTRACE"]
