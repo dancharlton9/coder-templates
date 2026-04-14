@@ -3,3 +3,6 @@
 *.tfstate.backup
 *.tfvars
 .terraform.lock.hcl
+
+# Bundled shared/ copies inside template dirs (created by push-template.sh)
+templates/*/shared/

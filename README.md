@@ -104,17 +104,15 @@ A workspace for .NET + Angular/TypeScript projects.
 - [Coder CLI](https://coder.com/docs/install) installed and authenticated
 - JetBrains Gateway + Coder plugin installed on your local machine (for JetBrains IDEs)
 
-### Deploy a template
+### Deploy or update a template
+
+Use the push script, which bundles `shared/` into the template directory before uploading:
 
 ```bash
-coder templates create dotnet-angular --directory ./templates/dotnet-angular
+./push-template.sh dotnet-angular
 ```
 
-### Update an existing template
-
-```bash
-coder templates push dotnet-angular --directory ./templates/dotnet-angular
-```
+The script copies `shared/` into the template dir, runs `coder templates push`, then cleans up the copy automatically.
 
 ### Create a workspace
 
