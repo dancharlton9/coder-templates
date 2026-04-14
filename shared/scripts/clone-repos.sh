@@ -28,25 +28,25 @@ for REPO_URL in "${REPOS[@]}"; do
   # ── Auto-restore by project type ──────────────────────────────────────────
 
   # .NET
-  if ls "$REPO_DIR"/*.sln 1>/dev/null 2>&1; then
+  if ls "$REPO_DIR"/*.sln 1>/dev/null 2>&1 && command -v dotnet &>/dev/null; then
     echo "Restoring .NET packages for $REPO_NAME..."
     dotnet restore "$REPO_DIR" || true
   fi
 
   # Node.js
-  if [ -f "$REPO_DIR/package.json" ]; then
+  if [ -f "$REPO_DIR/package.json" ] && command -v npm &>/dev/null; then
     echo "Installing npm packages for $REPO_NAME..."
     (cd "$REPO_DIR" && npm install) || true
   fi
 
   # Python
-  if [ -f "$REPO_DIR/requirements.txt" ]; then
+  if [ -f "$REPO_DIR/requirements.txt" ] && command -v pip &>/dev/null; then
     echo "Installing Python packages for $REPO_NAME..."
     (cd "$REPO_DIR" && pip install -r requirements.txt --break-system-packages) || true
   fi
 
   # Go
-  if [ -f "$REPO_DIR/go.mod" ]; then
+  if [ -f "$REPO_DIR/go.mod" ] && command -v go &>/dev/null; then
     echo "Downloading Go modules for $REPO_NAME..."
     (cd "$REPO_DIR" && go mod download) || true
   fi

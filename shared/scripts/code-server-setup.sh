@@ -49,4 +49,4 @@ if [ ! -f "$SETTINGS_FILE" ] && [ -f "$SETTINGS_SOURCE" ]; then
 fi
 
 # ── Launch ────────────────────────────────────────────────────────────────────
-code-server --auth none --port "$PORT" --host 0.0.0.0 &
+code-server --auth none --port "$PORT" --host 0.0.0.0 > /tmp/code-server.log 2>&1 &
