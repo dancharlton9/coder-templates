@@ -85,6 +85,11 @@ resource "docker_container" "workspace" {
 
   privileged = var.docker_in_docker
 
+  labels {
+    label = "com.docker.compose.project"
+    value = "coder"
+  }
+
   capabilities {
     add = ["SYS_PTRACE"]
   }
