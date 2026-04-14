@@ -69,6 +69,10 @@ resource "coder_agent" "main" {
   startup_script = <<-EOF
     set -e
 
+    # Ensure GitHub's host key is trusted
+    mkdir -p ~/.ssh
+    ssh-keyscan -t ed25519 github.com >> ~/.ssh/known_hosts 2>/dev/null
+
     # Configure npm to use a user-writable global directory
     mkdir -p ~/.npm-global
     npm config set prefix '~/.npm-global'
