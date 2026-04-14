@@ -21,7 +21,7 @@ data "coder_workspace_owner" "me" {}
 data "coder_parameter" "repo" {
   name         = "Repository"
   display_name = "Repository"
-  description  = "SSH git URL of the repository to clone"
+  description  = "Full SSH git URL (e.g. git@github.com:dancharlton9/my-repo.git)"
   type         = "string"
   mutable      = false
   default      = "git@github.com:dancharlton9/"
@@ -69,38 +69,83 @@ resource "coder_agent" "main" {
   startup_script = <<-EOF
     set -e
 
-    # Ensure GitHub's host key is trusted
+    # ── SSH / Git setup ───────────────────────────────────────────────────────
     mkdir -p ~/.ssh
     ssh-keyscan -t ed25519 github.com >> ~/.ssh/known_hosts 2>/dev/null
 
-    # Configure npm to use a user-writable global directory
+    # ── npm global path (persistent across terminals) ─────────────────────────
     mkdir -p ~/.npm-global
     npm config set prefix '~/.npm-global'
     export PATH=~/.npm-global/bin:$PATH
+    grep -q '.npm-global/bin' ~/.bashrc 2>/dev/null || \
+      echo 'export PATH=~/.npm-global/bin:$PATH' >> ~/.bashrc
 
-    # Install Claude Code if not already present
+    # ── Claude Code ───────────────────────────────────────────────────────────
     if ! command -v claude &> /dev/null; then
       npm install -g @anthropic-ai/claude-code
     fi
 
-    # Install and start code-server
+    # ── code-server ───────────────────────────────────────────────────────────
     if ! command -v code-server &> /dev/null; then
       curl -fsSL https://code-server.dev/install.sh | sh
     fi
+
+    # Install extensions (no-op if already installed)
+    # Theme & icons
+    code-server --install-extension Catppuccin.catppuccin-vsc
+    code-server --install-extension Catppuccin.catppuccin-vsc-icons
+
+    # C# / .NET
+    code-server --install-extension ms-dotnettools.csharp
+    code-server --install-extension ms-dotnettools.csdevkit
+
+    # Angular / TypeScript
+    code-server --install-extension Angular.ng-template
+    code-server --install-extension dbaeumer.vscode-eslint
+    code-server --install-extension esbenp.prettier-vscode
+
+    # General productivity
+    code-server --install-extension eamodio.gitlens
+    code-server --install-extension EditorConfig.EditorConfig
+    code-server --install-extension christian-kohler.path-intellisense
+    code-server --install-extension formulahendry.auto-rename-tag
+    code-server --install-extension usernamehw.errorlens
+
+    # Settings (only write once — won't overwrite manual changes)
+    SETTINGS_DIR=~/.local/share/code-server/User
+    SETTINGS_FILE="$SETTINGS_DIR/settings.json"
+    if [ ! -f "$SETTINGS_FILE" ]; then
+      mkdir -p "$SETTINGS_DIR"
+      cat > "$SETTINGS_FILE" << 'SETTINGS'
+    {
+      "workbench.colorTheme": "Catppuccin Mocha",
+      "workbench.iconTheme": "catppuccin-mocha",
+      "editor.fontSize": 14,
+      "editor.formatOnSave": true,
+      "editor.tabSize": 2,
+      "editor.bracketPairColorization.enabled": true,
+      "editor.guides.bracketPairs": true,
+      "editor.minimap.enabled": false,
+      "terminal.integrated.defaultProfile.linux": "bash"
+    }
+    SETTINGS
+    fi
+
+    # Start code-server in the background
     code-server --auth none --port 13337 --host 0.0.0.0 &
 
-    # Clone repo if not already present
+    # ── Clone repo ────────────────────────────────────────────────────────────
     REPO_DIR=~/project
     if [ ! -d "$REPO_DIR/.git" ]; then
       git clone ${data.coder_parameter.repo.value} "$REPO_DIR"
     fi
 
-    # .NET restore
-    if [ -f "$REPO_DIR"/*.sln ]; then
+    # ── .NET restore ──────────────────────────────────────────────────────────
+    if ls "$REPO_DIR"/*.sln 1>/dev/null 2>&1; then
       dotnet restore "$REPO_DIR"
     fi
 
-    # npm install if frontend project
+    # ── npm install ───────────────────────────────────────────────────────────
     if [ -f "$REPO_DIR/package.json" ]; then
       cd "$REPO_DIR" && npm install
     fi
@@ -172,7 +217,6 @@ resource "docker_container" "workspace" {
   # Coder agent token injected automatically
   env = [
     "CODER_AGENT_TOKEN=${coder_agent.main.token}",
-    "SSH_AUTH_SOCK=/tmp/coder-ssh-agent.sock"
   ]
 
   command = [
@@ -183,12 +227,6 @@ resource "docker_container" "workspace" {
   volumes {
     volume_name    = docker_volume.home_volume.name
     container_path = "/home/coder"
-    read_only      = false
-  }
-
-  volumes {
-    host_path      = "/tmp/coder-ssh-agent.sock"
-    container_path = "/tmp/coder-ssh-agent.sock"
     read_only      = false
   }
 
