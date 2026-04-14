@@ -83,6 +83,12 @@ resource "coder_agent" "main" {
       npm install -g @anthropic-ai/claude-code
     fi
 
+    # Install and start code-server
+    if ! command -v code-server &> /dev/null; then
+      curl -fsSL https://code-server.dev/install.sh | sh
+    fi
+    code-server --auth none --port 13337 --host 0.0.0.0 &
+
     # Clone repo if not already present
     REPO_DIR=~/project
     if [ ! -d "$REPO_DIR/.git" ]; then
