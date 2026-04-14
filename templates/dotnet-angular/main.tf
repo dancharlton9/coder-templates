@@ -27,6 +27,22 @@ data "coder_parameter" "repos" {
   default      = "git@github.com:dancharlton9/"
 }
 
+data "coder_parameter" "dotnet_sdk" {
+  name         = "dotnet_sdk"
+  display_name = ".NET SDK Version"
+  type         = "string"
+  default      = "10.0"
+  mutable      = false
+  option {
+    name  = ".NET 10"
+    value = "10.0"
+  }
+  option {
+    name  = ".NET 9"
+    value = "9.0"
+  }
+}
+
 data "coder_parameter" "dotnet_port" {
   name         = "API Port"
   display_name = ".NET API Port"
@@ -57,6 +73,9 @@ module "workspace" {
   arch                  = data.coder_provisioner.me.arch
   image_context         = path.module
   docker_socket         = true
+  build_args            = {
+    DOTNET_SDK_VERSION = data.coder_parameter.dotnet_sdk.value
+  }
 
   startup_script = <<-EOF
     # Shared bootstrap (SSH, PATH, Claude Code)

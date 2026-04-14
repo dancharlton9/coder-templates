@@ -36,9 +36,11 @@ resource "docker_image" "workspace" {
   build {
     context    = var.image_context
     dockerfile = var.dockerfile
+    build_args = var.build_args
   }
   triggers = {
     dockerfile = filesha256("${var.image_context}/${var.dockerfile}")
+    build_args = sha256(jsonencode(var.build_args))
   }
   keep_locally = true
 }

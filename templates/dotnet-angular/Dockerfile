@@ -1,4 +1,5 @@
-FROM mcr.microsoft.com/dotnet/sdk:9.0
+ARG DOTNET_SDK_VERSION=10.0
+FROM mcr.microsoft.com/dotnet/sdk:${DOTNET_SDK_VERSION}
 
 ARG DEBIAN_FRONTEND=noninteractive
 

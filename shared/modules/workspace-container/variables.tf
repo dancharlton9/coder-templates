@@ -53,3 +53,9 @@ variable "docker_socket" {
   description = "Whether to mount the Docker socket into the workspace"
   default     = true
 }
+
+variable "build_args" {
+  type        = map(string)
+  description = "Docker build arguments to pass to the image build"
+  default     = {}
+}
