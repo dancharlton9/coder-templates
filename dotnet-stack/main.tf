@@ -67,8 +67,6 @@ resource "coder_agent" "main" {
   }
 
   startup_script = <<-EOF
-    set -e
-
     # ── SSH / Git setup ───────────────────────────────────────────────────────
     mkdir -p ~/.ssh
     ssh-keyscan -t ed25519 github.com >> ~/.ssh/known_hosts 2>/dev/null
@@ -92,24 +90,23 @@ resource "coder_agent" "main" {
 
     # Install extensions (no-op if already installed)
     # Theme & icons
-    code-server --install-extension Catppuccin.catppuccin-vsc
-    code-server --install-extension Catppuccin.catppuccin-vsc-icons
+    code-server --install-extension Catppuccin.catppuccin-vsc || true
+    code-server --install-extension Catppuccin.catppuccin-vsc-icons || true
 
     # C# / .NET
-    code-server --install-extension ms-dotnettools.csharp
-    code-server --install-extension ms-dotnettools.csdevkit
+    code-server --install-extension muhammad-sammy.csharp || true
 
     # Angular / TypeScript
-    code-server --install-extension Angular.ng-template
-    code-server --install-extension dbaeumer.vscode-eslint
-    code-server --install-extension esbenp.prettier-vscode
+    code-server --install-extension Angular.ng-template || true
+    code-server --install-extension dbaeumer.vscode-eslint || true
+    code-server --install-extension esbenp.prettier-vscode || true
 
     # General productivity
-    code-server --install-extension eamodio.gitlens
-    code-server --install-extension EditorConfig.EditorConfig
-    code-server --install-extension christian-kohler.path-intellisense
-    code-server --install-extension formulahendry.auto-rename-tag
-    code-server --install-extension usernamehw.errorlens
+    code-server --install-extension eamodio.gitlens || true
+    code-server --install-extension EditorConfig.EditorConfig || true
+    code-server --install-extension christian-kohler.path-intellisense || true
+    code-server --install-extension formulahendry.auto-rename-tag || true
+    code-server --install-extension usernamehw.errorlens || true
 
     # Settings (only write once — won't overwrite manual changes)
     SETTINGS_DIR=~/.local/share/code-server/User
