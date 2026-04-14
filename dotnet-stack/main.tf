@@ -160,7 +160,10 @@ resource "docker_container" "workspace" {
   image = docker_image.workspace.image_id
 
   # Coder agent token injected automatically
-  env = ["CODER_AGENT_TOKEN=${coder_agent.main.token}"]
+  env = [
+    "CODER_AGENT_TOKEN=${coder_agent.main.token}"
+    "SSH_AUTH_SOCK=/tmp/coder-ssh-agent.sock"
+  ]
 
   command = [
     "sh", "-c",
@@ -170,6 +173,12 @@ resource "docker_container" "workspace" {
   volumes {
     volume_name    = docker_volume.home_volume.name
     container_path = "/home/coder"
+    read_only      = false
+  }
+
+  volumes {
+    host_path      = "/tmp/coder-ssh-agent.sock"
+    container_path = "/tmp/coder-ssh-agent.sock"
     read_only      = false
   }
 
