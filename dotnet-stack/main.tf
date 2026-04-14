@@ -161,7 +161,7 @@ resource "docker_container" "workspace" {
 
   # Coder agent token injected automatically
   env = [
-    "CODER_AGENT_TOKEN=${coder_agent.main.token}"
+    "CODER_AGENT_TOKEN=${coder_agent.main.token}",
     "SSH_AUTH_SOCK=/tmp/coder-ssh-agent.sock"
   ]
 
