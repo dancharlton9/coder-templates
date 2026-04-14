@@ -21,22 +21,10 @@ data "coder_workspace_owner" "me" {}
 data "coder_parameter" "repo" {
   name         = "Repository"
   display_name = "Repository"
-  description  = "Git repository to clone into the workspace"
+  description  = "SSH git URL of the repository to clone"
   type         = "string"
   mutable      = false
-
-  option {
-    name  = "OrOut API"
-    value = "git@github.com:yourorg/orout-api.git"
-  }
-  option {
-    name  = "OrOut Frontend"
-    value = "git@github.com:yourorg/orout-frontend.git"
-  }
-  option {
-    name  = "DCWD Site"
-    value = "git@github.com:yourorg/dcwd-web.git"
-  }
+  default      = "git@github.com:dancharlton9/"
 }
 
 data "coder_parameter" "dotnet_port" {
