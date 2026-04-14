@@ -1,0 +1,14 @@
+# Theme & icons
+Catppuccin.catppuccin-vsc
+Catppuccin.catppuccin-vsc-icons
+
+# Docker
+ms-azuretools.vscode-docker
+
+# General productivity
+eamodio.gitlens
+EditorConfig.EditorConfig
+christian-kohler.path-intellisense
+formulahendry.auto-rename-tag
+usernamehw.errorlens
+esbenp.prettier-vscode

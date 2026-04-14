@@ -1,0 +1,6 @@
+# C# / .NET
+muhammad-sammy.csharp
+
+# Angular / TypeScript
+Angular.ng-template
+dbaeumer.vscode-eslint

@@ -9,91 +9,133 @@ Workspace templates for [Coder](https://coder.com) — a self-hosted remote deve
 - **Remote access** via Twingate (zero-trust network access)
 - **Editor access** via code-server (browser-based VS Code), native VS Code, or JetBrains Gateway
 
+## Repository Structure
+
+```
+coder-templates/
+├── shared/
+│   ├── docker/
+│   │   └── base.Dockerfile            # Base image reference for all templates
+│   ├── scripts/
+│   │   ├── bootstrap.sh               # SSH, npm path, .bashrc, Claude Code
+│   │   ├── code-server-setup.sh       # Install, extensions, settings, launch
+│   │   └── clone-repos.sh             # Multi-repo clone + auto-restore
+│   ├── extensions/
+│   │   ├── core.txt                   # Extensions every workspace gets
+│   │   └── dotnet-angular.txt         # Stack-specific extensions
+│   ├── settings/
+│   │   └── code-server.json           # Default code-server settings.json
+│   └── modules/
+│       ├── jetbrains/                 # JetBrains Gateway app resources
+│       ├── code-server/               # code-server app + healthcheck
+│       └── workspace-container/       # docker_volume, docker_image, docker_container, coder_agent
+├── templates/
+│   └── dotnet-angular/
+│       ├── main.tf                    # Composes shared modules + template-specific config
+│       └── Dockerfile                 # FROM .NET SDK, adds Node.js
+└── .gitignore
+```
+
+## How It Works
+
+### Shared Scripts
+
+Scripts in `shared/scripts/` are COPYed into each template's Docker image at `/opt/coder/scripts/` during the build. Each template's Dockerfile copies them from the repo root (the Docker build context is set to the repo root via Option A in the Terraform module).
+
+- **`bootstrap.sh`** — Sourced (not executed) at workspace startup. Sets up SSH known hosts, npm global path, and installs Claude Code.
+- **`code-server-setup.sh`** — Installs code-server, reads extension lists, applies settings, and launches. Pass additional extension files as arguments.
+- **`clone-repos.sh`** — Clones comma-separated git URLs into `~/projects/<name>` and auto-restores packages (.NET, Node.js, Python, Go).
+
+### Shared Modules
+
+Terraform modules in `shared/modules/` encapsulate reusable infrastructure:
+
+- **`workspace-container`** — The core module. Creates the Docker volume, agent, image, and container. Every template uses this.
+- **`code-server`** — Registers the code-server `coder_app` with healthcheck.
+- **`jetbrains`** — Registers JetBrains Gateway apps (Rider, WebStorm, DataGrip by default). Uses `for_each` so templates can override which IDEs to include.
+
+### Extensions
+
+Extension lists live in `shared/extensions/` as plain text files (one extension ID per line, `#` for comments). `core.txt` is always installed; stack-specific files are passed as arguments to `code-server-setup.sh`.
+
 ## Templates
 
-### `dotnet-stack`
+### `dotnet-angular`
 
-A general-purpose workspace template for .NET + React projects.
+A workspace for .NET + Angular/TypeScript projects.
 
 **Includes:**
 - .NET SDK 9.0
 - Node.js 20
-- Git
-- Claude Code CLI (`claude`)
-- Persistent home volume (survives workspace restarts)
+- Docker CLI (client only — host socket mounted)
+- code-server with Catppuccin theme
+- Claude Code CLI
+- JetBrains Gateway (Rider, WebStorm, DataGrip)
 
-**Parameters prompted at workspace creation:**
-- Repository — dropdown of known repos to clone
-- API Port — .NET backend port (default: 5000)
-- Frontend Port — React dev server port (default: 5173)
+**Parameters:**
+- Repositories — comma-separated SSH git URLs
+- .NET API Port (default: 5000)
+- Frontend Dev Server Port (default: 5173)
 
 **Exposed apps:**
-- VS Code (code-server) — browser-based editor
-- .NET API — proxied port forward to running backend
-- Frontend — proxied port forward to Vite dev server
+- VS Code (code-server)
+- .NET API — proxied port forward
+- Frontend — proxied port forward
+- Rider / WebStorm / DataGrip via JetBrains Gateway
+
+## Creating a New Template
+
+1. Create a new directory: `mkdir templates/my-stack`
+2. Create a stack-specific extension file: `shared/extensions/my-stack.txt`
+3. Create `templates/my-stack/Dockerfile` — use the appropriate SDK base image, follow the same pattern as `dotnet-angular`
+4. Create `templates/my-stack/main.tf` — compose the shared modules, pass template-specific config
+5. Push to GitHub and create the template in Coder: `coder templates create my-stack --directory ./templates/my-stack`
+
+## Updating Shared Config
+
+- **JetBrains build numbers** — Edit defaults in `shared/modules/jetbrains/variables.tf`
+- **code-server settings** — Edit `shared/settings/code-server.json`
+- **Core extensions** — Edit `shared/extensions/core.txt`
 
 ## Usage
 
 ### Prerequisites
 
-- [Coder CLI](https://coder.com/docs/install) installed
-- Authenticated against your Coder instance:
-
-```bash
-coder login https://your-coder-instance.domain.com
-```
+- [Coder CLI](https://coder.com/docs/install) installed and authenticated
+- JetBrains Gateway + Coder plugin installed on your local machine (for JetBrains IDEs)
 
 ### Deploy a template
 
 ```bash
-coder templates create dotnet-stack --directory ./dotnet-stack
+coder templates create dotnet-angular --directory ./templates/dotnet-angular
 ```
 
 ### Update an existing template
 
 ```bash
-coder templates push dotnet-stack --directory ./dotnet-stack
+coder templates push dotnet-angular --directory ./templates/dotnet-angular
 ```
 
 ### Create a workspace
 
-From the Coder dashboard, select the template, choose a repository from the dropdown, and click **Create Workspace**.
+From the Coder dashboard, select the template, fill in parameters, and click **Create Workspace**.
 
-## First-time setup per workspace
+## First-time Setup
 
-After a workspace is created for the first time, authenticate Claude Code against your Anthropic subscription:
+After a workspace is created for the first time, authenticate Claude Code:
 
 ```bash
 claude login
 ```
 
-The auth token is stored in `~/.claude/` on the persistent home volume and will survive workspace restarts.
+The auth token is stored in `~/.claude/` on the persistent home volume and survives workspace restarts.
 
-## SSH / Git authentication
+## SSH / Git Authentication
 
-Workspaces use an SSH key stored at `/home/coder/.ssh/id_ed25519` for Git operations. The corresponding public key is registered as a deploy key on GitHub.
-
-To set up on a fresh Coder container:
+Workspaces use an SSH key at `/home/coder/.ssh/id_ed25519` for Git operations. To set up on a fresh workspace:
 
 ```bash
 ssh-keygen -t ed25519 -C "coder-homelab" -f ~/.ssh/id_ed25519 -N ""
 cat ~/.ssh/id_ed25519.pub  # add this to GitHub SSH keys
 ssh -T git@github.com      # verify
-```
-
-## Adding a new template
-
-1. Create a new directory under the repo root
-2. Add `main.tf` and `Dockerfile`
-3. Push to GitHub
-4. Deploy via `coder templates create <name> --directory ./<name>`
-
-## Repository structure
-
-```
-coder-templates/
-  dotnet-stack/
-    main.tf       # Terraform template defining the workspace
-    Dockerfile    # Container image for the workspace
-  README.md
 ```
