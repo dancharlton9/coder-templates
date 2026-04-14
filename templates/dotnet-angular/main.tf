@@ -46,7 +46,7 @@ data "coder_parameter" "frontend_port" {
 # ── Workspace container (agent, volume, image, container) ─────────────────────
 
 module "workspace" {
-  source = "../../shared/modules/workspace-container"
+  source = "./shared/modules/workspace-container"
 
   workspace_id          = data.coder_workspace.me.id
   workspace_name        = data.coder_workspace.me.name
@@ -55,8 +55,7 @@ module "workspace" {
   owner_full_name       = data.coder_workspace_owner.me.full_name
   owner_email           = data.coder_workspace_owner.me.email
   arch                  = data.coder_provisioner.me.arch
-  image_context         = "${path.module}/../.."
-  dockerfile            = "templates/dotnet-angular/Dockerfile"
+  image_context         = path.module
   docker_socket         = true
 
   startup_script = <<-EOF
@@ -74,14 +73,14 @@ module "workspace" {
 # ── code-server app ───────────────────────────────────────────────────────────
 
 module "code_server" {
-  source   = "../../shared/modules/code-server"
+  source   = "./shared/modules/code-server"
   agent_id = module.workspace.agent_id
 }
 
 # ── JetBrains Gateway ─────────────────────────────────────────────────────────
 
 module "jetbrains" {
-  source         = "../../shared/modules/jetbrains"
+  source         = "./shared/modules/jetbrains"
   agent_id       = module.workspace.agent_id
   workspace_name = data.coder_workspace.me.name
   owner_name     = data.coder_workspace_owner.me.name
