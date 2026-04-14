@@ -32,19 +32,19 @@ variable "ides" {
       display_name     = "Rider"
       icon             = "/icon/rider.svg"
       ide_product_code = "RD"
-      ide_build_number = "243.22562.250"
+      ide_build_number = "253.31033.136"
     }
     webstorm = {
       display_name     = "WebStorm"
       icon             = "/icon/webstorm.svg"
       ide_product_code = "WS"
-      ide_build_number = "243.22562.222"
+      ide_build_number = "253.31033.133"
     }
     datagrip = {
       display_name     = "DataGrip"
       icon             = "/icon/datagrip.svg"
       ide_product_code = "DB"
-      ide_build_number = "243.22562.170"
+      ide_build_number = "253.29346.270"
     }
   }
 }
